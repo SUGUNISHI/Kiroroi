@@ -1,0 +1,36 @@
+import { NextResponse } from 'next/server'
+import { SignedPostPolicy } from '@aws-sdk/s3-presigned-post'
+
+export const runtime = 'edge'
+
+export async function GET(request: Request) {
+  const filename = new URL(request.url).searchParams.get('filename')
+  if (!filename) {
+    return NextResponse.json({ error: 'Filename is required' }, { status: 400 })
+  }
+
+  const { R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME } = process.env
+
+  const region = 'auto'
+  const expiresIn = 60 * 5 // URL expires in 5 minutes
+
+  const s3 = new SignedPostPolicy({
+    region,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID!,
+      secretAccessKey: R2_SECRET_ACCESS_KEY!,
+    },
+    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  })
+
+  const { url, fields } = await s3.signPost({
+    Bucket: R2_BUCKET_NAME!,
+    Key: filename,
+    Conditions: [
+      ['content-length-range', 0, 10485760], // up to 10 MB
+    ],
+    Expires: expiresIn,
+  })
+
+  return NextResponse.json({ url, fields })
+}
