@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Live Share</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    img {
+      max-width: 200px;
+      height: auto;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+    .photo-feed {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .photo-feed img {
+      max-width: 150px;
+      height: auto;
+      border-radius: 10px;
+      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    button {
+      background-color: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>📸 Photo Live Share</h1>
+  <div>
+    <input type="file" id="fileInput" accept="image/*">
+    <div id="previewContainer" style="display: none;">
+      <img id="previewImage" alt="Preview">
+      <br>
+      <button id="uploadButton">업로드</button>
+    </div>
+  </div>
+
+  <h2>📷 실시간 사진 피드</h2>
+  <div class="photo-feed" id="photoFeed"></div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const uploadButton = document.getElementById('uploadButton');
+    const photoFeed = document.getElementById('photoFeed');
+
+    let selectedImage = null;
+
+    // 파일 선택 핸들러
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        selectedImage = file;
+        previewImage.src = URL.createObjectURL(file);
+        previewContainer.style.display = 'block';
+      }
+    });
+
+    // 업로드 버튼 핸들러
+    uploadButton.addEventListener('click', async () => {
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append('image', selectedImage);
+
+        // 이미지 업로드 요청
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.fileUrl) {
+          // 업로드된 이미지를 피드에 추가
+          const imgElement = document.createElement('img');
+          imgElement.src = data.fileUrl;
+          photoFeed.prepend(imgElement); // 새로운 사진을 가장 위에 추가
+        }
+
+        // 미리보기 초기화
+        previewContainer.style.display = 'none';
+        selectedImage = null;
+        fileInput.value = ''; // 파일 선택 초기화
+      }
+    });
+
+    // 페이지 로드 시, 기존 업로드된 이미지를 로드
+    async function loadExistingImages() {
+      const response = await fetch('/api/photos');
+      const data = await response.json();
+      data.forEach(imageUrl => {
+        const imgElement = document.createElement('img');
+        imgElement.src = imageUrl;
+        photoFeed.appendChild(imgElement);
+      });
+    }
+
+    // 페이지가 로드되면 기존 이미지를 로드
+    window.onload = loadExistingImages;
+  </script>
+</body>
+</html>
