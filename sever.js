@@ -6,12 +6,7 @@ const app = express();
 const path = require('path');
 const port = process.env.PORT || 3000;
 
-// R2 설정
-const s3 = new AWS.S3({
-  endpoint: new AWS.Endpoint('https://f7388472221e58f7ca2363ac0c355295.r2.cloudflarestorage.com'),
-  accessKeyId: 'b6e9fe5f54a6f84988b197ab8fde9591',
-  secretAccessKey: '0d689b4eb491b842f2d00600af55893ede7d056338390f4fdb6e23d35914ef47',
-  region: 'auto',
+// 
 });
 
 // Multer 설정 (파일 업로드)
